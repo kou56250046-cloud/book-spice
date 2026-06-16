@@ -63,7 +63,10 @@ async function fetchGenreBooks(genre) {
   console.log(`[${genre.id}] "${genre.keyword}" を取得中...`);
 
   const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => '(本文取得失敗)');
+    throw new Error(`HTTP ${res.status} ${res.statusText} | ${body}`);
+  }
 
   const data = await res.json();
   if (data.error) {
