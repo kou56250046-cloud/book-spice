@@ -15,6 +15,8 @@ if (!APP_ID) {
   console.error('  GitHub Secrets に RAKUTEN_APP_ID を登録してください');
   process.exit(1);
 }
+// 診断: アプリIDの形式を確認（値そのものは表示しない）
+console.log(`[診断] RAKUTEN_APP_ID: 長さ=${APP_ID.length}, 数字のみ=${/^\d+$/.test(APP_ID)}, 先頭文字種=${/\d/.test(APP_ID[0])?'数字':'英字/記号'}`);
 
 const ROOT           = path.join(__dirname, '..');
 const BOOKS_PER_GENRE = 20;
