@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人生のスパイス｜人生にひと匙の刺激を</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@500;700;800&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#ECE3D0;
+    --paper-2:#F5EEDD;
+    --paper-3:#E3D8C0;
+    --ink:#2A211A;
+    --ink-soft:#6E5F4E;
+    --line:#D6C8AC;
+    --saffron:#C2871B;
+    --clove:#8A4A2E;
+    --cardamom:#6E7C50;
+    --anise:#6E4B73;
+    --pepper:#4E5A66;
+    --shadow:0 1px 0 rgba(0,0,0,.04), 0 12px 28px -18px rgba(42,33,26,.45);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;
+    font-family:"Noto Sans JP",system-ui,sans-serif;
+    color:var(--ink);
+    background-color:var(--paper);
+    background-image:
+      radial-gradient(rgba(138,74,46,.05) 1px, transparent 1.4px),
+      radial-gradient(rgba(78,90,102,.04) 1px, transparent 1.4px);
+    background-size:22px 22px, 30px 30px;
+    background-position:0 0, 11px 7px;
+    line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px}
+  a{color:inherit}
+
+  /* ---------- ヘッダー ---------- */
+  header{
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(180deg,rgba(245,238,221,.9),rgba(236,227,208,.4));
+    backdrop-filter:saturate(1.1) blur(2px);
+    position:sticky;top:0;z-index:20;
+  }
+  .topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding:20px 0 16px;flex-wrap:wrap}
+  .brand{display:flex;flex-direction:column;gap:2px}
+  .mark{
+    font-family:"Shippori Mincho B1",serif;font-weight:800;
+    font-size:clamp(28px,4.6vw,42px);letter-spacing:.06em;line-height:1.05;
+    display:flex;align-items:center;gap:.42em;
+  }
+  .seed{display:inline-block;width:.42em;height:.42em;background:var(--saffron);transform:rotate(45deg);border-radius:2px;
+    box-shadow:0 0 0 4px rgba(194,135,27,.16)}
+  .tagline{font-size:13px;color:var(--ink-soft);letter-spacing:.16em;font-weight:500}
+  .meta{font-size:12px;color:var(--ink-soft);text-align:right;letter-spacing:.04em;line-height:1.7}
+  .meta b{color:var(--clove);font-weight:700}
+
+  /* ---------- 検索 + 並べ替え ---------- */
+  .controls{display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:0 0 18px}
+  .search{flex:1 1 260px;display:flex;align-items:center;gap:10px;background:var(--paper-2);
+    border:1px solid var(--line);border-radius:999px;padding:9px 16px;box-shadow:var(--shadow)}
+  .search input{border:0;background:transparent;outline:none;font:inherit;color:var(--ink);width:100%}
+  .search input::placeholder{color:#ab9c83}
+  .search svg{flex:none;opacity:.55}
+  select,.toggle{
+    font:inherit;font-size:13px;border:1px solid var(--line);background:var(--paper-2);
+    color:var(--ink);border-radius:999px;padding:9px 14px;cursor:pointer;box-shadow:var(--shadow)
+  }
+  .toggle[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+
+  /* ---------- ジャンルのスパイス棚 ---------- */
+  .rack{display:flex;gap:9px;overflow-x:auto;padding:4px 0 22px;scrollbar-width:thin}
+  .chip{
+    flex:none;display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:999px;
+    border:1px solid var(--line);background:var(--paper-2);cursor:pointer;font-size:14px;font-weight:500;
+    color:var(--ink);transition:transform .15s ease, background .15s ease;white-space:nowrap
+  }
+  .chip:hover{transform:translateY(-1px)}
+  .chip .dot{width:10px;height:10px;transform:rotate(45deg);border-radius:2px;background:var(--g,var(--saffron))}
+  .chip[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .chip[aria-pressed="true"] .dot{box-shadow:0 0 0 3px rgba(245,238,221,.25)}
+
+  /* ---------- 今週のひと匙 ---------- */
+  .eyebrow{font-family:"Shippori Mincho B1",serif;font-size:13px;letter-spacing:.34em;
+    color:var(--clove);text-transform:none;margin:8px 0 12px;font-weight:700}
+  .feature{
+    display:grid;grid-template-columns:148px 1fr;gap:24px;align-items:center;
+    background:linear-gradient(135deg,var(--paper-2),var(--paper-3));
+    border:1px solid var(--line);border-radius:18px;padding:24px;margin-bottom:40px;box-shadow:var(--shadow);
+    position:relative;overflow:hidden
+  }
+  .feature::after{content:"";position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;
+    background:radial-gradient(circle,rgba(194,135,27,.18),transparent 70%)}
+  .feature .cover{width:148px;height:200px}
+  .feature h2{font-family:"Shippori Mincho B1",serif;font-size:clamp(22px,3.2vw,30px);margin:.1em 0 .15em;line-height:1.3}
+  .feature .byline{color:var(--ink-soft);font-size:14px;margin-bottom:10px}
+
+  /* ---------- 書影（共通）---------- */
+  .cover{
+    flex:none;width:84px;height:118px;border-radius:5px;color:#fff8ec;padding:10px 9px;
+    display:flex;flex-direction:column;justify-content:space-between;
+    box-shadow:inset -7px 0 12px -8px rgba(0,0,0,.5), 2px 3px 8px -3px rgba(0,0,0,.4);
+    background:linear-gradient(135deg,var(--g),color-mix(in srgb,var(--g) 62%, #2A211A));
+    border-left:4px solid color-mix(in srgb,var(--g) 55%, #000);position:relative;overflow:hidden
+  }
+  .cover .ct{font-family:"Shippori Mincho B1",serif;font-size:12px;font-weight:700;line-height:1.35;
+    text-shadow:0 1px 2px rgba(0,0,0,.3);display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+  .cover .ca{font-size:9px;opacity:.82;letter-spacing:.02em}
+  /* 書影画像がある場合 */
+  .cover.has-img{padding:0;background:var(--paper-3);border-left:none}
+  .cover.has-img img{width:100%;height:100%;object-fit:cover;display:block;border-radius:4px}
+
+  /* ---------- 本のグリッド ---------- */
+  .section-title{display:flex;align-items:baseline;gap:12px;margin:0 0 18px}
+  .section-title h3{font-family:"Shippori Mincho B1",serif;font-size:22px;margin:0;font-weight:700}
+  .section-title span{font-size:13px;color:var(--ink-soft)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(248px,1fr));gap:22px;margin-bottom:48px}
+  .card{
+    background:var(--paper-2);border:1px solid var(--line);border-radius:16px;padding:18px;
+    box-shadow:var(--shadow);display:flex;flex-direction:column;gap:12px;position:relative;
+    transition:transform .18s ease, box-shadow .18s ease
+  }
+  .card:hover{transform:translateY(-3px);box-shadow:0 1px 0 rgba(0,0,0,.04),0 20px 36px -20px rgba(42,33,26,.5)}
+  .card.fade{opacity:0;transform:translateY(10px)}
+  .card-top{display:flex;gap:14px}
+  .head{flex:1;min-width:0}
+  .gtag{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-soft);margin-bottom:4px}
+  .gtag .dot{width:8px;height:8px;transform:rotate(45deg);border-radius:1px;background:var(--g)}
+  .title{font-family:"Shippori Mincho B1",serif;font-size:16px;font-weight:700;line-height:1.4;margin:0 0 2px}
+  .author{font-size:12px;color:var(--ink-soft)}
+
+  /* スパイス度メーター（署名要素） */
+  .spice{display:flex;align-items:center;gap:9px;margin-top:8px}
+  .spice .label{font-size:10px;letter-spacing:.18em;color:var(--ink-soft)}
+  .grains{display:flex;gap:5px}
+  .grain{width:10px;height:10px;transform:rotate(45deg);border-radius:2px;border:1.5px solid var(--g);opacity:.45}
+  .grain.on{background:var(--g);opacity:1}
+
+  .comment{border-top:1px dashed var(--line);padding-top:11px;font-size:13px}
+  .comment .lab{font-size:11px;font-weight:700;color:var(--g);letter-spacing:.06em;display:block;margin-bottom:2px}
+  .comment .reason{margin:0 0 9px}
+  .comment .view{margin:0;color:var(--ink);background:color-mix(in srgb,var(--g) 9%, transparent);
+    border-left:3px solid var(--g);padding:7px 10px;border-radius:0 6px 6px 0}
+  .comment .no-comment{margin:0;color:var(--ink-soft);font-style:italic}
+
+  .actions{display:flex;align-items:center;gap:8px;margin-top:2px}
+  .iconbtn{display:inline-flex;align-items:center;gap:6px;font:inherit;font-size:12px;cursor:pointer;
+    border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 12px;color:var(--ink-soft)}
+  .iconbtn[aria-pressed="true"]{color:#fff;border-color:transparent}
+  .iconbtn.fav[aria-pressed="true"]{background:var(--clove)}
+  .iconbtn.read[aria-pressed="true"]{background:var(--cardamom)}
+  .iconbtn .ic{font-style:normal;font-size:13px}
+  .notebtn{margin-left:auto;border:none;background:none;color:var(--saffron);font:inherit;font-size:12px;
+    cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+  .note{display:none;flex-direction:column;gap:8px;border-top:1px dashed var(--line);padding-top:11px}
+  .note.open{display:flex}
+  .note label{font-size:11px;color:var(--ink-soft);letter-spacing:.04em}
+  .note textarea{font:inherit;font-size:13px;width:100%;border:1px solid var(--line);border-radius:8px;
+    background:var(--paper);padding:8px 10px;resize:vertical;min-height:42px;color:var(--ink)}
+  .saved{font-size:11px;color:var(--cardamom);opacity:0;transition:opacity .3s}
+  .saved.show{opacity:1}
+
+  .empty{text-align:center;color:var(--ink-soft);padding:60px 20px;font-size:15px}
+  .loading{text-align:center;color:var(--ink-soft);padding:80px 20px;font-size:15px}
+  .error{text-align:center;color:var(--clove);padding:80px 20px;font-size:15px}
+
+  footer{border-top:1px solid var(--line);margin-top:30px;padding:26px 0 50px;color:var(--ink-soft);font-size:12px;line-height:1.9}
+  footer .credit{background:var(--paper-2);border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+  footer a{text-decoration:underline;text-underline-offset:3px}
+
+  @media (max-width:560px){
+    .feature{grid-template-columns:110px 1fr;gap:16px;padding:18px}
+    .feature .cover{height:154px;width:110px}
+    .meta{text-align:left}
+  }
+  :focus-visible{outline:2px solid var(--saffron);outline-offset:2px;border-radius:4px}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark"><span class="seed"></span>人生のスパイス</div>
+        <div class="tagline">人生にひと匙の刺激を。</div>
+      </div>
+      <div class="meta">
+        毎週土曜 <b>朝7:00</b> 自動更新<br>
+        最終更新：<span id="updatedAt">―</span>
+      </div>
+    </div>
+    <div class="controls wrap" style="padding-left:0;padding-right:0">
+      <label class="search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+        <input id="q" type="search" placeholder="タイトル・著者で探す" aria-label="本を検索">
+      </label>
+      <select id="sort" aria-label="並べ替え">
+        <option value="spice">スパイス度の高い順</option>
+        <option value="rank">ランキング順</option>
+        <option value="title">タイトル順</option>
+      </select>
+      <button class="toggle" id="favOnly" aria-pressed="false">♡ お気に入り</button>
+      <button class="toggle" id="readOnly" aria-pressed="false">✓ 読了</button>
+    </div>
+    <nav class="rack wrap" id="rack" style="padding-left:0;padding-right:0" aria-label="ジャンル"></nav>
+  </div>
+</header>
+
+<main class="wrap" id="app">
+  <div id="loading" class="loading">データを読み込んでいます…</div>
+  <div id="content" style="display:none">
+    <div class="eyebrow">今 週 の ひ と 匙</div>
+    <section class="feature" id="feature"></section>
+    <div class="section-title">
+      <h3 id="listTitle">すべてのジャンル</h3>
+      <span id="count"></span>
+    </div>
+    <section class="grid" id="grid"></section>
+  </div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="credit">
+      書籍データ提供：<a href="https://webservice.rakuten.co.jp/" target="_blank" rel="noopener noreferrer">楽天ウェブサービス</a>（楽天ブックスAPI）<br>
+      Supported by Rakuten Developers
+    </div>
+    お気に入り・読了・メモはお使いの端末内にのみ保存されます（他の端末とは共有されません）。
+  </div>
+</footer>
+
+<script>
+/* -------- 静的設定 -------- */
+const GENRES = [
+  {id:"self",  name:"自己啓発",       color:"#C2871B"},
+  {id:"phil",  name:"哲学",           color:"#8A4A2E"},
+  {id:"habit", name:"習慣",           color:"#6E7C50"},
+  {id:"spirit",name:"スピリチュアル",  color:"#6E4B73"},
+  {id:"sci",   name:"科学",           color:"#4E5A66"},
+];
+const GC = Object.fromEntries(GENRES.map(g=>[g.id,g]));
+
+/* -------- アプリデータ（books.json から読み込み）-------- */
+let BOOKS = [];
+let FEATURED_ISBN = null;
+
+/* -------- 端末内ストレージ -------- */
+const store = (()=>{
+  let mem={}, ok=true;
+  try{const k="__t__";localStorage.setItem(k,"1");localStorage.removeItem(k);}catch(e){ok=false;}
+  return{
+    get(k){try{return ok?localStorage.getItem(k):(mem[k]??null);}catch(e){return mem[k]??null;}},
+    set(k,v){try{ok?localStorage.setItem(k,v):(mem[k]=v);}catch(e){mem[k]=v;}}
+  };
+})();
+const DKEY="spice_userdata_v1";
+let DATA = (()=>{try{return JSON.parse(store.get(DKEY))||{};}catch(e){return{};}})();
+DATA.fav=DATA.fav||{}; DATA.read=DATA.read||{}; DATA.review=DATA.review||{}; DATA.quote=DATA.quote||{};
+const save=()=>store.set(DKEY,JSON.stringify(DATA));
+
+/* -------- 状態 -------- */
+let state={genre:"all",q:"",sort:"spice",favOnly:false,readOnly:false};
+
+/* -------- 描画ヘルパー -------- */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function coverHTML(b){
+  const g=GC[b.genre];
+  if(b.imageUrl){
+    return `<div class="cover has-img" style="--g:${g.color}">
+      <img src="${esc(b.imageUrl)}" alt="${esc(b.title)}" loading="lazy"
+           onerror="this.closest('.cover').classList.remove('has-img')"></div>`;
+  }
+  return `<div class="cover" style="--g:${g.color}">
+    <div class="ct">${esc(b.title)}</div><div class="ca">${esc(b.author)}</div></div>`;
+}
+
+function grains(n,color){
+  const score=Math.max(1,Math.min(5,Math.round(n)));
+  let h=`<div class="grains" aria-label="スパイス度 ${score} / 5">`;
+  for(let i=1;i<=5;i++) h+=`<span class="grain ${i<=score?"on":""}" style="--g:${color}"></span>`;
+  return h+`</div>`;
+}
+
+function commentSection(b){
+  if(!b.reason && !b.view){
+    return `<div class="comment"><p class="no-comment">コメントなし</p></div>`;
+  }
+  const g=GC[b.genre];
+  return `<div class="comment">
+    ${b.reason?`<span class="lab">おすすめの理由</span><p class="reason">${esc(b.reason)}</p>`:''}
+    ${b.view?`<p class="view"><span class="lab">人生にスパイスを与える視点</span>${esc(b.view)}</p>`:''}
+  </div>`;
+}
+
+/* -------- ラック描画 -------- */
+function renderRack(){
+  const items=[{id:"all",name:"すべて",color:"#2A211A"},...GENRES];
+  $("#rack").innerHTML=items.map(g=>`
+    <button class="chip" data-g="${g.id}" style="--g:${g.color}" aria-pressed="${state.genre===g.id}">
+      <span class="dot"></span>${g.name}</button>`).join("");
+}
+
+/* -------- 今週のひと匙 -------- */
+function renderFeature(){
+  const b=BOOKS.find(x=>x.isbn===FEATURED_ISBN)||BOOKS[0];
+  if(!b) return;
+  const g=GC[b.genre];
+  if(!g) return;
+  $("#feature").innerHTML=`
+    ${coverHTML(b)}
+    <div>
+      <div class="gtag"><span class="dot" style="--g:${g.color}"></span>${g.name}・今週イチおし</div>
+      <h2>${esc(b.title)}</h2>
+      <div class="byline">${esc(b.author)}</div>
+      ${grains(b.spiceScore,g.color)}
+      ${b.reason?`<p class="comment reason" style="margin-top:12px">${esc(b.reason)}</p>`:''}
+      ${b.view?`<p class="comment view" style="--g:${g.color}"><span class="lab" style="--g:${g.color}">人生にスパイスを与える視点</span>${esc(b.view)}</p>`:''}
+    </div>`;
+}
+
+/* -------- 書籍カード -------- */
+function cardHTML(b){
+  const g=GC[b.genre];
+  if(!g) return '';
+  const fav=!!DATA.fav[b.isbn], read=!!DATA.read[b.isbn];
+  return `<article class="card fade" data-isbn="${b.isbn}" style="--g:${g.color}">
+    <div class="card-top">
+      ${coverHTML(b)}
+      <div class="head">
+        <div class="gtag"><span class="dot"></span>${g.name}・第${b.salesRank}位</div>
+        <h4 class="title">${esc(b.title)}</h4>
+        <div class="author">${esc(b.author)}</div>
+        <div class="spice"><span class="label">スパイス度</span>${grains(b.spiceScore,g.color)}</div>
+      </div>
+    </div>
+    ${commentSection(b)}
+    <div class="actions">
+      <button class="iconbtn fav" data-act="fav" aria-pressed="${fav}"><i class="ic">${fav?"♥":"♡"}</i>お気に入り</button>
+      <button class="iconbtn read" data-act="read" aria-pressed="${read}"><i class="ic">${read?"✓":"○"}</i>${read?"読了":"未読"}</button>
+      <button class="notebtn" data-act="note">メモを書く</button>
+    </div>
+    <div class="note">
+      <div><label>一言レビュー</label><textarea data-f="review" placeholder="読んで感じたことを一言。">${esc(DATA.review[b.isbn]||"")}</textarea></div>
+      <div><label>心に残った言葉・名言メモ</label><textarea data-f="quote" placeholder="刺さったフレーズを書き留めておく。">${esc(DATA.quote[b.isbn]||"")}</textarea></div>
+      <span class="saved">保存しました</span>
+    </div>
+  </article>`;
+}
+
+/* -------- フィルタ・ソート -------- */
+function filtered(){
+  let list=BOOKS.slice();
+  if(state.genre!=="all") list=list.filter(b=>b.genre===state.genre);
+  if(state.favOnly) list=list.filter(b=>DATA.fav[b.isbn]);
+  if(state.readOnly) list=list.filter(b=>DATA.read[b.isbn]);
+  if(state.q){const q=state.q.toLowerCase();
+    list=list.filter(b=>(b.title+b.author).toLowerCase().includes(q));}
+  if(state.sort==="spice") list.sort((a,b)=>b.spiceScore-a.spiceScore||a.salesRank-b.salesRank);
+  else if(state.sort==="rank") list.sort((a,b)=>a.salesRank-b.salesRank);
+  else list.sort((a,b)=>a.title.localeCompare(b.title,"ja"));
+  return list;
+}
+
+/* -------- グリッド描画 -------- */
+function render(){
+  renderRack();
+  const list=filtered();
+  $("#listTitle").textContent = state.genre==="all" ? "すべてのジャンル" : GC[state.genre].name;
+  $("#count").textContent = `${list.length}冊`;
+  const grid=$("#grid");
+  grid.innerHTML = list.length ? list.map(cardHTML).join("")
+    : `<div class="empty">該当する本が見つかりませんでした。<br>検索や絞り込みを変えてみてください。</div>`;
+  requestAnimationFrame(()=>grid.querySelectorAll(".card").forEach((c,i)=>{
+    setTimeout(()=>c.classList.remove("fade"), Math.min(i*28,260));
+  }));
+}
+
+/* -------- イベント -------- */
+$("#rack").addEventListener("click",e=>{
+  const c=e.target.closest(".chip"); if(!c)return;
+  state.genre=c.dataset.g; render();
+});
+$("#q").addEventListener("input",e=>{state.q=e.target.value.trim();render();});
+$("#sort").addEventListener("change",e=>{state.sort=e.target.value;render();});
+$("#favOnly").addEventListener("click",e=>{state.favOnly=!state.favOnly;e.currentTarget.setAttribute("aria-pressed",state.favOnly);render();});
+$("#readOnly").addEventListener("click",e=>{state.readOnly=!state.readOnly;e.currentTarget.setAttribute("aria-pressed",state.readOnly);render();});
+
+$("#grid").addEventListener("click",e=>{
+  const btn=e.target.closest("[data-act]"); if(!btn)return;
+  const card=btn.closest(".card"), isbn=card.dataset.isbn, act=btn.dataset.act;
+  if(act==="fav"){DATA.fav[isbn]=!DATA.fav[isbn];save();
+    btn.setAttribute("aria-pressed",DATA.fav[isbn]);btn.querySelector(".ic").textContent=DATA.fav[isbn]?"♥":"♡";
+    if(state.favOnly)render();}
+  else if(act==="read"){DATA.read[isbn]=!DATA.read[isbn];save();
+    btn.setAttribute("aria-pressed",DATA.read[isbn]);btn.querySelector(".ic").textContent=DATA.read[isbn]?"✓":"○";
+    btn.childNodes[1].textContent=DATA.read[isbn]?"読了":"未読";
+    if(state.readOnly)render();}
+  else if(act==="note"){card.querySelector(".note").classList.toggle("open");}
+});
+$("#grid").addEventListener("input",e=>{
+  const ta=e.target.closest("textarea[data-f]"); if(!ta)return;
+  const card=ta.closest(".card"), isbn=card.dataset.isbn;
+  DATA[ta.dataset.f][isbn]=ta.value; save();
+  const tag=card.querySelector(".saved"); tag.classList.add("show");
+  clearTimeout(tag._t); tag._t=setTimeout(()=>tag.classList.remove("show"),1200);
+});
+
+/* -------- 起動（books.json を読み込み）-------- */
+(async()=>{
+  try{
+    const res=await fetch('./books.json');
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    BOOKS=data.books||[];
+    FEATURED_ISBN=data.featured||(BOOKS[0]&&BOOKS[0].isbn)||null;
+    const updEl=document.getElementById('updatedAt');
+    if(updEl&&data.updatedAt) updEl.textContent=data.updatedAt;
+    document.getElementById('loading').remove();
+    document.getElementById('content').style.display='';
+    renderFeature();
+    render();
+  }catch(err){
+    document.getElementById('loading').innerHTML=
+      '<div class="error">データを読み込めませんでした。<br><small>しばらく待ってからページを再読み込みしてください。</small></div>';
+  }
+})();
+</script>
+</body>
+</html>
