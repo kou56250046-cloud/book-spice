@@ -57,7 +57,6 @@ async function fetchGenreBooks(genre) {
     hits:           String(Math.min(BOOKS_PER_GENRE, 30)),
     page:           '1',
     formatVersion:  '2',
-    elements:       'isbn,title,author,publisherName,largeImageUrl,mediumImageUrl,itemPrice,reviewAverage,reviewCount,itemUrl',
   });
 
   const url = `${API_BASE}?${params}`;
