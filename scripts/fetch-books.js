@@ -42,7 +42,10 @@ function httpsGet(url) {
       hostname: parsed.hostname,
       path:     parsed.pathname + parsed.search,
       method:   'GET',
-      headers:  { 'User-Agent': 'Node.js/20' },
+      headers:  {
+        'Referer':    'https://kou56250046-cloud.github.io/book-spice/',
+        'User-Agent': 'Node.js/20',
+      },
     }, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
@@ -146,7 +149,7 @@ async function main() {
     } catch (err) {
       console.error(`[${genre.id}] 取得失敗:`, err.message);
     }
-    await sleep(600);
+    await sleep(1500);
   }
 
   if (allBooks.length === 0) {
