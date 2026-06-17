@@ -6,29 +6,26 @@
 
 'use strict';
 
-const fs   = require('fs');
-const path = require('path');
+const https = require('https');
+const fs    = require('fs');
+const path  = require('path');
 
 const APP_ID = process.env.RAKUTEN_APP_ID;
 if (!APP_ID) {
   console.error('エラー: 環境変数 RAKUTEN_APP_ID が設定されていません');
-  console.error('  GitHub Secrets に RAKUTEN_APP_ID を登録してください');
   process.exit(1);
 }
-// 診断: アプリIDの形式を確認（値そのものは表示しない）
-console.log(`[診断] RAKUTEN_APP_ID: 長さ=${APP_ID.length}, 数字のみ=${/^\d+$/.test(APP_ID)}, 先頭文字種=${/\d/.test(APP_ID[0])?'数字':'英字/記号'}`);
 
-const ROOT           = path.join(__dirname, '..');
+const ROOT            = path.join(__dirname, '..');
 const BOOKS_PER_GENRE = 20;
-const API_BASE       = 'https://app.rakuten.co.jp/services/api/BooksBook/Search/20130522';
+const SITE_URL        = 'https://kou56250046-cloud.github.io/book-spice/';
 
-// ジャンル定義とAPIキーワード
 const GENRES = [
-  { id: 'self',   name: '自己啓発',       keyword: '自己啓発'              },
-  { id: 'phil',   name: '哲学',           keyword: '哲学 思想'             },
-  { id: 'habit',  name: '習慣',           keyword: '習慣 ライフハック'     },
-  { id: 'spirit', name: 'スピリチュアル', keyword: 'スピリチュアル 精神世界'},
-  { id: 'sci',    name: '科学',           keyword: '科学 サイエンス'       },
+  { id: 'self',   name: '自己啓発',       keyword: '自己啓発'               },
+  { id: 'phil',   name: '哲学',           keyword: '哲学 思想'              },
+  { id: 'habit',  name: '習慣',           keyword: '習慣 ライフハック'      },
+  { id: 'spirit', name: 'スピリチュアル', keyword: 'スピリチュアル 精神世界' },
+  { id: 'sci',    name: '科学',           keyword: '科学 サイエンス'        },
 ];
 
 // ------- ユーティリティ -------
@@ -37,8 +34,37 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+// https モジュールで GET リクエスト（Referer ヘッダーを確実に送信するため）
+function httpsGet(url) {
+  return new Promise((resolve, reject) => {
+    const parsed = new URL(url);
+    const options = {
+      hostname: parsed.hostname,
+      path:     parsed.pathname + parsed.search,
+      method:   'GET',
+      headers:  {
+        'Referer':    SITE_URL,
+        'User-Agent': 'Node.js/20',
+      },
+    };
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        if (res.statusCode >= 400) {
+          reject(new Error(`HTTP ${res.statusCode} | ${data}`));
+        } else {
+          try   { resolve(JSON.parse(data)); }
+          catch { reject(new Error(`JSONパースエラー: ${data.slice(0, 200)}`)); }
+        }
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
 // スパイス度算出（1〜5、0.5刻み）
-// 要件定義: レビュー平均×0.5 ＋ レビュー件数（対数正規化）×0.3 ＋ ランキング補正×0.2
 function calcSpiceScore(reviewAverage, reviewCount, salesRank) {
   const ratingScore = (parseFloat(reviewAverage) / 5) * 5;
   const reviewScore = Math.min(
@@ -53,38 +79,26 @@ function calcSpiceScore(reviewAverage, reviewCount, salesRank) {
 
 async function fetchGenreBooks(genre) {
   const params = new URLSearchParams({
-    applicationId:  APP_ID,
-    keyword:        genre.keyword,
-    sort:           'standard',      // 楽天の総合ランキング（売上ベース）
-    hits:           String(Math.min(BOOKS_PER_GENRE, 30)),
-    page:           '1',
-    formatVersion:  '2',
+    applicationId: APP_ID,
+    keyword:       genre.keyword,
+    sort:          'standard',
+    hits:          String(Math.min(BOOKS_PER_GENRE, 30)),
+    page:          '1',
+    formatVersion: '2',
   });
 
-  const url = `${API_BASE}?${params}`;
+  const url = `https://app.rakuten.co.jp/services/api/BooksBook/Search/20130522?${params}`;
   console.log(`[${genre.id}] "${genre.keyword}" を取得中...`);
 
-  const res = await fetch(url, {
-    headers: {
-      'Referer': 'https://kou56250046-cloud.github.io/book-spice/',
-    },
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '(本文取得失敗)');
-    throw new Error(`HTTP ${res.status} ${res.statusText} | ${body}`);
-  }
+  const data = await httpsGet(url);
 
-  const data = await res.json();
-  if (data.error) {
-    throw new Error(`API エラー: ${data.error} - ${data.error_description}`);
-  }
+  if (data.error) throw new Error(`API エラー: ${data.error} - ${data.error_description}`);
   if (!data.Items || data.Items.length === 0) {
     console.warn(`[${genre.id}] 結果が0件でした`);
     return [];
   }
 
   const today = new Date().toISOString().slice(0, 10);
-
   return data.Items.slice(0, BOOKS_PER_GENRE).map((item, i) => ({
     isbn:          item.isbn,
     title:         item.title,
@@ -109,7 +123,6 @@ async function fetchGenreBooks(genre) {
 async function main() {
   console.log('楽天ブックスAPIからデータを取得します...');
 
-  // comments.json を読み込む（なくてもエラーにしない）
   const commentsPath = path.join(ROOT, 'comments.json');
   let comments = {};
   try {
@@ -124,21 +137,16 @@ async function main() {
   for (const genre of GENRES) {
     try {
       const books = await fetchGenreBooks(genre);
-      // コメントをISBNで紐づけてマージ
       for (const book of books) {
         const c = comments[book.isbn];
-        if (c) {
-          book.reason = c.reason || '';
-          book.view   = c.view   || '';
-        }
+        if (c) { book.reason = c.reason || ''; book.view = c.view || ''; }
       }
       allBooks.push(...books);
       console.log(`[${genre.id}] ${books.length} 件完了`);
     } catch (err) {
       console.error(`[${genre.id}] 取得失敗:`, err.message);
     }
-
-    await sleep(600); // レート制限対策（ジャンル間インターバル）
+    await sleep(600);
   }
 
   if (allBooks.length === 0) {
@@ -146,7 +154,6 @@ async function main() {
     process.exit(1);
   }
 
-  // 今週のひと匙: スパイス度最高の本を自動選出
   const featured = allBooks.reduce((best, b) =>
     !best || b.spiceScore > best.spiceScore ? b : best, null
   );
@@ -157,9 +164,7 @@ async function main() {
     books:     allBooks,
   };
 
-  const outPath = path.join(ROOT, 'books.json');
-  fs.writeFileSync(outPath, JSON.stringify(output, null, 2), 'utf8');
-
+  fs.writeFileSync(path.join(ROOT, 'books.json'), JSON.stringify(output, null, 2), 'utf8');
   console.log(`books.json を書き出しました（${allBooks.length} 件）`);
   console.log(`今週のひと匙: 『${featured?.title}』（スパイス度 ${featured?.spiceScore}）`);
 }
