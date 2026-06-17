@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 // scripts/fetch-books.js
 // 楽天ブックスAPIから書籍ランキングを取得し books.json を生成するスクリプト
-// 実行: node scripts/fetch-books.js
-// 必須環境変数: RAKUTEN_APP_ID
+// 必須環境変数: RAKUTEN_APP_ID, RAKUTEN_ACCESS_KEY
 
 'use strict';
 
@@ -10,15 +9,17 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const APP_ID = process.env.RAKUTEN_APP_ID;
-if (!APP_ID) {
-  console.error('エラー: 環境変数 RAKUTEN_APP_ID が設定されていません');
+const APP_ID     = process.env.RAKUTEN_APP_ID;
+const ACCESS_KEY = process.env.RAKUTEN_ACCESS_KEY;
+
+if (!APP_ID || !ACCESS_KEY) {
+  console.error('エラー: RAKUTEN_APP_ID と RAKUTEN_ACCESS_KEY の両方が必要です');
   process.exit(1);
 }
 
 const ROOT            = path.join(__dirname, '..');
 const BOOKS_PER_GENRE = 20;
-const SITE_URL        = 'https://kou56250046-cloud.github.io/book-spice/';
+const API_BASE        = 'https://openapi.rakuten.co.jp/services/api/BooksTotal/Search/20170404';
 
 const GENRES = [
   { id: 'self',   name: '自己啓発',       keyword: '自己啓発'               },
@@ -34,20 +35,15 @@ function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-// https モジュールで GET リクエスト（Referer ヘッダーを確実に送信するため）
 function httpsGet(url) {
   return new Promise((resolve, reject) => {
     const parsed = new URL(url);
-    const options = {
+    const req = https.request({
       hostname: parsed.hostname,
       path:     parsed.pathname + parsed.search,
       method:   'GET',
-      headers:  {
-        'Referer':    SITE_URL,
-        'User-Agent': 'Node.js/20',
-      },
-    };
-    const req = https.request(options, (res) => {
+      headers:  { 'User-Agent': 'Node.js/20' },
+    }, (res) => {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
@@ -79,20 +75,24 @@ function calcSpiceScore(reviewAverage, reviewCount, salesRank) {
 
 async function fetchGenreBooks(genre) {
   const params = new URLSearchParams({
+    format:        'json',
     applicationId: APP_ID,
+    accessKey:     ACCESS_KEY,
     keyword:       genre.keyword,
-    sort:          'standard',
+    booksGenreId:  '001',          // 書籍のみに絞る
     hits:          String(Math.min(BOOKS_PER_GENRE, 30)),
     page:          '1',
-    formatVersion: '2',
   });
 
-  const url = `https://app.rakuten.co.jp/services/api/BooksBook/Search/20130522?${params}`;
+  const url = `${API_BASE}?${params}`;
   console.log(`[${genre.id}] "${genre.keyword}" を取得中...`);
 
   const data = await httpsGet(url);
 
-  if (data.error) throw new Error(`API エラー: ${data.error} - ${data.error_description}`);
+  if (data.error || data.errors) {
+    const err = data.error_description || JSON.stringify(data.errors);
+    throw new Error(`API エラー: ${err}`);
+  }
   if (!data.Items || data.Items.length === 0) {
     console.warn(`[${genre.id}] 結果が0件でした`);
     return [];
@@ -100,16 +100,16 @@ async function fetchGenreBooks(genre) {
 
   const today = new Date().toISOString().slice(0, 10);
   return data.Items.slice(0, BOOKS_PER_GENRE).map((item, i) => ({
-    isbn:          item.isbn,
-    title:         item.title,
-    author:        item.author,
-    publisher:     item.publisherName,
+    isbn:          item.isbn          || '',
+    title:         item.title         || '',
+    author:        item.author        || '',
+    publisher:     item.publisherName || '',
     genre:         genre.id,
     imageUrl:      item.largeImageUrl || item.mediumImageUrl || '',
     price:         parseInt(item.itemPrice) || 0,
     reviewAverage: parseFloat(item.reviewAverage) || 0,
     reviewCount:   parseInt(item.reviewCount)   || 0,
-    itemUrl:       item.itemUrl,
+    itemUrl:       item.itemUrl       || '',
     salesRank:     i + 1,
     spiceScore:    calcSpiceScore(item.reviewAverage, item.reviewCount, i + 1),
     fetchedAt:     today,
