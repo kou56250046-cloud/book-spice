@@ -43,8 +43,9 @@ function httpsGet(url) {
       path:     parsed.pathname + parsed.search,
       method:   'GET',
       headers:  {
-        'Referer':    'https://kou56250046-cloud.github.io/book-spice/',
-        'User-Agent': 'Node.js/20',
+        'Referer':    'https://webservice.rakuten.co.jp/',
+        'Origin':     'https://webservice.rakuten.co.jp',
+        'User-Agent': 'Mozilla/5.0 (compatible; book-spice/1.0)',
       },
     }, (res) => {
       let data = '';
