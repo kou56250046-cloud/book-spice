@@ -64,7 +64,11 @@ async function fetchGenreBooks(genre) {
   const url = `${API_BASE}?${params}`;
   console.log(`[${genre.id}] "${genre.keyword}" を取得中...`);
 
-  const res = await fetch(url);
+  const res = await fetch(url, {
+    headers: {
+      'Referer': 'https://kou56250046-cloud.github.io/book-spice/',
+    },
+  });
   if (!res.ok) {
     const body = await res.text().catch(() => '(本文取得失敗)');
     throw new Error(`HTTP ${res.status} ${res.statusText} | ${body}`);
