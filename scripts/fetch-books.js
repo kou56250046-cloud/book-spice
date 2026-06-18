@@ -81,6 +81,7 @@ async function fetchGenreBooks(genre) {
     format:        'json',
     applicationId: APP_ID,
     accessKey:     ACCESS_KEY,
+    httpReferrer:  'https://kou56250046-cloud.github.io/book-spice/',
     keyword:       genre.keyword,
     booksGenreId:  '001',
     hits:          String(Math.min(BOOKS_PER_GENRE, 30)),
