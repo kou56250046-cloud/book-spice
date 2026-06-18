@@ -239,15 +239,88 @@
 <script>
 /* -------- 静的設定 -------- */
 const GENRES = [
-  {id:"self",  name:"自己啓発",       color:"#C2871B"},
-  {id:"phil",  name:"哲学",           color:"#8A4A2E"},
-  {id:"habit", name:"習慣",           color:"#6E7C50"},
-  {id:"spirit",name:"スピリチュアル",  color:"#6E4B73"},
-  {id:"sci",   name:"科学",           color:"#4E5A66"},
+  {id:"self",  name:"自己啓発",       color:"#C2871B", keyword:"自己啓発"},
+  {id:"phil",  name:"哲学",           color:"#8A4A2E", keyword:"哲学 思想"},
+  {id:"habit", name:"習慣",           color:"#6E7C50", keyword:"習慣 ライフハック"},
+  {id:"spirit",name:"スピリチュアル",  color:"#6E4B73", keyword:"スピリチュアル 精神世界"},
+  {id:"sci",   name:"科学",           color:"#4E5A66", keyword:"科学 サイエンス"},
 ];
 const GC = Object.fromEntries(GENRES.map(g=>[g.id,g]));
 
-/* -------- アプリデータ（books.json から読み込み）-------- */
+/* -------- Rakuten API -------- */
+const _AID = '86019b50-2909-469e-9665-55fb56c7db95';
+const _AKY = 'pk_UIOIm5pF4IKfzoXRWo75NszXRJv2weWAJIFBQDZEfsj';
+const _API = 'https://openapi.rakuten.co.jp/services/api/BooksTotal/Search/20170404';
+const PER  = 20;
+const BKEY = 'spice_books_cache_v1';
+const TTL  = 7 * 24 * 60 * 60 * 1000;
+
+function calcSpice(avg, cnt, rank) {
+  const r = (parseFloat(avg) / 5) * 5;
+  const c = Math.min(Math.log10((parseInt(cnt)||0)+1) / Math.log10(5000), 1) * 5;
+  const k = ((PER - rank + 1) / PER) * 5;
+  return Math.max(1, Math.min(5, Math.round((r*.5 + c*.3 + k*.2) * 2) / 2));
+}
+
+function loadCache() {
+  try {
+    const d = JSON.parse(localStorage.getItem(BKEY));
+    return d && (Date.now() - (d.fetchedAt||0)) < TTL ? d : null;
+  } catch { return null; }
+}
+
+function saveCache(d) {
+  try { localStorage.setItem(BKEY, JSON.stringify(d)); } catch {}
+}
+
+async function fetchAPI() {
+  const today = new Date().toISOString().slice(0, 10);
+  const all   = [];
+
+  for (let i = 0; i < GENRES.length; i++) {
+    const g = GENRES[i];
+    const p = new URLSearchParams({
+      format:'json', applicationId:_AID, accessKey:_AKY,
+      keyword:g.keyword, booksGenreId:'001',
+      hits:String(PER), page:'1', sort:'sales',
+    });
+    const res  = await fetch(`${_API}?${p}`);
+    if (!res.ok) { const t = await res.text().catch(()=>''); throw new Error(`HTTP ${res.status}: ${t.slice(0,120)}`); }
+    const data = await res.json();
+    if (data.error || data.errors) throw new Error(JSON.stringify(data.errors||data.error));
+    (data.Items||[]).slice(0,PER).forEach((w,idx)=>{
+      const item = w.Item || w;
+      all.push({
+        isbn:item.isbn||'', title:item.title||'', author:item.author||'',
+        publisher:item.publisherName||'', genre:g.id,
+        imageUrl:item.largeImageUrl||item.mediumImageUrl||'',
+        price:parseInt(item.itemPrice)||0,
+        reviewAverage:parseFloat(item.reviewAverage)||0,
+        reviewCount:parseInt(item.reviewCount)||0,
+        itemUrl:item.itemUrl||'',
+        salesRank:idx+1, spiceScore:calcSpice(item.reviewAverage,item.reviewCount,idx+1),
+        fetchedAt:today, reason:'', view:'',
+      });
+    });
+    if (i < GENRES.length-1) await new Promise(r=>setTimeout(r,600));
+  }
+
+  if (!all.length) throw new Error('0件');
+
+  // comments.json をマージ
+  try {
+    const cr = await fetch('./comments.json');
+    if (cr.ok) {
+      const cm = await cr.json();
+      for (const b of all) { const c=cm[b.isbn]; if(c){b.reason=c.reason||'';b.view=c.view||'';} }
+    }
+  } catch {}
+
+  const ft = all.reduce((best,b)=>(!best||b.spiceScore>best.spiceScore)?b:best, null);
+  return { updatedAt:today, featured:ft.isbn, books:all, fetchedAt:Date.now() };
+}
+
+/* -------- アプリデータ -------- */
 let BOOKS = [];
 let FEATURED_ISBN = null;
 
@@ -414,23 +487,43 @@ $("#grid").addEventListener("input",e=>{
   clearTimeout(tag._t); tag._t=setTimeout(()=>tag.classList.remove("show"),1200);
 });
 
-/* -------- 起動（books.json を読み込み）-------- */
+/* -------- 起動 -------- */
 (async()=>{
-  try{
-    const res=await fetch('./books.json');
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const data=await res.json();
+  function initUI(data){
     BOOKS=data.books||[];
     FEATURED_ISBN=data.featured||(BOOKS[0]&&BOOKS[0].isbn)||null;
-    const updEl=document.getElementById('updatedAt');
-    if(updEl&&data.updatedAt) updEl.textContent=data.updatedAt;
+    const el=document.getElementById('updatedAt');
+    if(el&&data.updatedAt) el.textContent=data.updatedAt;
     document.getElementById('loading').remove();
     document.getElementById('content').style.display='';
-    renderFeature();
-    render();
+    renderFeature(); render();
+  }
+  const loadEl=document.getElementById('loading');
+  try{
+    // 1. キャッシュが新鮮なら即表示
+    const cached=loadCache();
+    if(cached){ initUI(cached); return; }
+
+    // 2. ブラウザから Rakuten API を直接取得
+    loadEl.textContent='最新の書籍データを取得しています…';
+    try{
+      const apiData=await fetchAPI();
+      saveCache(apiData);
+      initUI(apiData);
+      return;
+    }catch(apiErr){
+      console.warn('API取得失敗、books.jsonにフォールバック:', apiErr.message);
+    }
+
+    // 3. books.json フォールバック
+    loadEl.textContent='データを読み込んでいます…';
+    const res=await fetch('./books.json');
+    if(!res.ok) throw new Error('books.json HTTP '+res.status);
+    initUI(await res.json());
+
   }catch(err){
-    document.getElementById('loading').innerHTML=
-      '<div class="error">データを読み込めませんでした。<br><small>しばらく待ってからページを再読み込みしてください。</small></div>';
+    console.error(err);
+    loadEl.innerHTML='<div class="error">データを読み込めませんでした。<br><small>しばらく待ってからページを再読み込みしてください。</small></div>';
   }
 })();
 </script>
