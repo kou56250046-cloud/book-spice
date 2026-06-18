@@ -16,6 +16,9 @@ if (!APP_ID) {
   process.exit(1);
 }
 
+// 診断ログ（値は隠す）
+console.log(`APP_ID: 長さ=${APP_ID.length}, 先頭2文字="${APP_ID.slice(0, 2)}...", 英数字のみ=${/^[a-zA-Z0-9]+$/.test(APP_ID)}`);
+
 const ROOT            = path.join(__dirname, '..');
 const BOOKS_PER_GENRE = 20;
 const API_BASE        = 'https://app.rakuten.co.jp/services/api/BooksTotal/Search/20170404';
