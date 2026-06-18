@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // scripts/fetch-books.js
 // 楽天ブックスAPIから書籍ランキングを取得し books.json を生成するスクリプト
-// 必須環境変数: RAKUTEN_APP_ID, RAKUTEN_ACCESS_KEY
+// 必須環境変数: RAKUTEN_APP_ID
 
 'use strict';
 
@@ -9,17 +9,16 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const APP_ID     = process.env.RAKUTEN_APP_ID;
-const ACCESS_KEY = process.env.RAKUTEN_ACCESS_KEY;
+const APP_ID = process.env.RAKUTEN_APP_ID;
 
-if (!APP_ID || !ACCESS_KEY) {
-  console.error('エラー: RAKUTEN_APP_ID と RAKUTEN_ACCESS_KEY の両方が必要です');
+if (!APP_ID) {
+  console.error('エラー: 環境変数 RAKUTEN_APP_ID が設定されていません');
   process.exit(1);
 }
 
 const ROOT            = path.join(__dirname, '..');
 const BOOKS_PER_GENRE = 20;
-const API_BASE        = 'https://openapi.rakuten.co.jp/services/api/BooksTotal/Search/20170404';
+const API_BASE        = 'https://app.rakuten.co.jp/services/api/BooksTotal/Search/20170404';
 
 const GENRES = [
   { id: 'self',   name: '自己啓発',       keyword: '自己啓発'               },
@@ -43,8 +42,6 @@ function httpsGet(url) {
       path:     parsed.pathname + parsed.search,
       method:   'GET',
       headers:  {
-        'Referer':    'https://webservice.rakuten.co.jp/',
-        'Origin':     'https://webservice.rakuten.co.jp',
         'User-Agent': 'Mozilla/5.0 (compatible; book-spice/1.0)',
       },
     }, (res) => {
@@ -81,11 +78,11 @@ async function fetchGenreBooks(genre) {
   const params = new URLSearchParams({
     format:        'json',
     applicationId: APP_ID,
-    accessKey:     ACCESS_KEY,
     keyword:       genre.keyword,
-    booksGenreId:  '001',          // 書籍のみに絞る
+    booksGenreId:  '001',
     hits:          String(Math.min(BOOKS_PER_GENRE, 30)),
     page:          '1',
+    sort:          'sales',
   });
 
   const url = `${API_BASE}?${params}`;
@@ -103,23 +100,27 @@ async function fetchGenreBooks(genre) {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  return data.Items.slice(0, BOOKS_PER_GENRE).map((item, i) => ({
-    isbn:          item.isbn          || '',
-    title:         item.title         || '',
-    author:        item.author        || '',
-    publisher:     item.publisherName || '',
-    genre:         genre.id,
-    imageUrl:      item.largeImageUrl || item.mediumImageUrl || '',
-    price:         parseInt(item.itemPrice) || 0,
-    reviewAverage: parseFloat(item.reviewAverage) || 0,
-    reviewCount:   parseInt(item.reviewCount)   || 0,
-    itemUrl:       item.itemUrl       || '',
-    salesRank:     i + 1,
-    spiceScore:    calcSpiceScore(item.reviewAverage, item.reviewCount, i + 1),
-    fetchedAt:     today,
-    reason:        '',
-    view:          '',
-  }));
+  // 楽天APIのレスポンスは data.Items[i].Item の構造
+  return data.Items.slice(0, BOOKS_PER_GENRE).map((wrapper, i) => {
+    const item = wrapper.Item;
+    return {
+      isbn:          item.isbn            || '',
+      title:         item.title           || '',
+      author:        item.author          || '',
+      publisher:     item.publisherName   || '',
+      genre:         genre.id,
+      imageUrl:      item.largeImageUrl   || item.mediumImageUrl || '',
+      price:         parseInt(item.itemPrice)    || 0,
+      reviewAverage: parseFloat(item.reviewAverage) || 0,
+      reviewCount:   parseInt(item.reviewCount)   || 0,
+      itemUrl:       item.itemUrl         || '',
+      salesRank:     i + 1,
+      spiceScore:    calcSpiceScore(item.reviewAverage, item.reviewCount, i + 1),
+      fetchedAt:     today,
+      reason:        '',
+      view:          '',
+    };
+  });
 }
 
 // ------- メイン -------
@@ -150,7 +151,7 @@ async function main() {
     } catch (err) {
       console.error(`[${genre.id}] 取得失敗:`, err.message);
     }
-    await sleep(1500);
+    await sleep(1000);
   }
 
   if (allBooks.length === 0) {
