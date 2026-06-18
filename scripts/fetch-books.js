@@ -44,6 +44,7 @@ function httpsGet(url) {
       method:   'GET',
       headers:  {
         'User-Agent': 'Mozilla/5.0 (compatible; book-spice/1.0)',
+        'Referer':    'https://kou56250046-cloud.github.io/book-spice/',
       },
     }, (res) => {
       let data = '';
