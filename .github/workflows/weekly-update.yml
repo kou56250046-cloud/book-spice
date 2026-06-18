@@ -24,7 +24,8 @@ jobs:
 
       - name: 楽天ブックスAPIからデータを取得
         env:
-          RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+          RAKUTEN_APP_ID:     ${{ secrets.RAKUTEN_APP_ID }}
+          RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
         run: node scripts/fetch-books.js
 
       - name: 変更があればコミット・プッシュ

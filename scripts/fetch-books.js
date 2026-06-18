@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // scripts/fetch-books.js
 // 楽天ブックスAPIから書籍ランキングを取得し books.json を生成するスクリプト
-// 必須環境変数: RAKUTEN_APP_ID
+// 必須環境変数: RAKUTEN_APP_ID, RAKUTEN_ACCESS_KEY
 
 'use strict';
 
@@ -9,19 +9,17 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
-const APP_ID = process.env.RAKUTEN_APP_ID;
+const APP_ID     = process.env.RAKUTEN_APP_ID;
+const ACCESS_KEY = process.env.RAKUTEN_ACCESS_KEY;
 
-if (!APP_ID) {
-  console.error('エラー: 環境変数 RAKUTEN_APP_ID が設定されていません');
+if (!APP_ID || !ACCESS_KEY) {
+  console.error('エラー: RAKUTEN_APP_ID と RAKUTEN_ACCESS_KEY の両方が必要です');
   process.exit(1);
 }
 
-// 診断ログ（値は隠す）
-console.log(`APP_ID: 長さ=${APP_ID.length}, 先頭2文字="${APP_ID.slice(0, 2)}...", 英数字のみ=${/^[a-zA-Z0-9]+$/.test(APP_ID)}`);
-
 const ROOT            = path.join(__dirname, '..');
 const BOOKS_PER_GENRE = 20;
-const API_BASE        = 'https://app.rakuten.co.jp/services/api/BooksTotal/Search/20170404';
+const API_BASE        = 'https://openapi.rakuten.co.jp/services/api/BooksTotal/Search/20170404';
 
 const GENRES = [
   { id: 'self',   name: '自己啓発',       keyword: '自己啓発'               },
@@ -81,6 +79,7 @@ async function fetchGenreBooks(genre) {
   const params = new URLSearchParams({
     format:        'json',
     applicationId: APP_ID,
+    accessKey:     ACCESS_KEY,
     keyword:       genre.keyword,
     booksGenreId:  '001',
     hits:          String(Math.min(BOOKS_PER_GENRE, 30)),
@@ -113,9 +112,9 @@ async function fetchGenreBooks(genre) {
       publisher:     item.publisherName   || '',
       genre:         genre.id,
       imageUrl:      item.largeImageUrl   || item.mediumImageUrl || '',
-      price:         parseInt(item.itemPrice)    || 0,
+      price:         parseInt(item.itemPrice)       || 0,
       reviewAverage: parseFloat(item.reviewAverage) || 0,
-      reviewCount:   parseInt(item.reviewCount)   || 0,
+      reviewCount:   parseInt(item.reviewCount)     || 0,
       itemUrl:       item.itemUrl         || '',
       salesRank:     i + 1,
       spiceScore:    calcSpiceScore(item.reviewAverage, item.reviewCount, i + 1),
